@@ -1,29 +1,41 @@
-angular.module('ionic.ion.imageCacheFactory', [])
+(function() {
+  'use strict';
+  angular.module('ionic.ion.imageCacheFactory', [])
 
-.factory('$ImageCacheFactory', ['$q', '$timeout', function($q, $timeout) {
-    return {
-        Cache: function(urls) {
-            var promises = [];
-            for (var i = 0; i < urls.length; i++) {
-                var deferred = $q.defer();
-                var img = new Image();
+  .factory('$ImageCacheFactory', $ImageCacheFactory);
 
-                img.onload = (function(deferred) {
-                    return function(){
-                        deferred.resolve();
-                    }
-                })(deferred);
-                
-                img.onerror = (function(deferred,url) {
-                    return function(){
-                        deferred.reject(url);
-                    }
-                })(deferred,urls[i]);
+  $ImageCacheFactory.$inject = ['$q'];
 
-                promises.push(deferred.promise);
-                img.src = urls[i];
-            }
-            return $q.all(promises);
-        }
+  function $ImageCacheFactory($q) {
+    var service = {
+      Cache: Cache
+    };
+    return service;
+
+    function Cache(urls) {
+      var promises = [];
+      angular.forEach(urls, function(url) {
+        var deferred = $q.defer();
+        var img = new Image();
+        img.onload = onImageLoad(deferred);
+        img.onerror = onImageError(deferred, url);
+        promises.push(deferred.promise);
+        img.src = url;
+      });
+      return $q.all(promises);
     }
-}]);
+
+    function onImageLoad(deferred) {
+      return function() {
+        deferred.resolve();
+      };
+    }
+
+    function onImageError(deferred, url) {
+      return function() {
+        deferred.reject(url);
+      };
+    }
+
+  }
+})();
